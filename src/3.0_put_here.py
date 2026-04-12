@@ -1,3 +1,4 @@
+3.2.1
 Figure 1: Summary Statistics of Gold Closing Price (2014–2026)
 import pandas as pd
 import matplotlib.pyplot as plt
