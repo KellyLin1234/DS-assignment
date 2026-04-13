@@ -71,3 +71,5 @@ plt.plot(df['Date'][-len(y_test_inv):], y_pred_inv, label='Predicted')
 plt.legend()
 plt.title("LSTM Prediction")
 plt.show()
+
+model.save("models/lstm_model.h5")
