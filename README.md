@@ -5,6 +5,7 @@ This project uses machine learning models (Random Forest, LSTM, Hybrid) to predi
 
 ## Models Used
 - Random Forest
+- Gradient Boosting / XGBoost
 - LSTM
 - Hybrid (RF + LSTM)
 
