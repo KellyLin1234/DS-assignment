@@ -1,7 +1,7 @@
 # Gold Price Prediction Project
 
 ## Description
-This project uses machine learning models (Random Forest, LSTM, Hybrid) to predict gold prices.
+This project uses machine learning models (Random Forest, LSTM, Hybrid) to predict gold prices in 10 years.
 
 ## Models Used
 - Random Forest
