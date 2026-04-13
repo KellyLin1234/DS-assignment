@@ -1,1 +1,133 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Input
+
+#Load Data
+df = pd.read_csv('Gold Price.csv')
+df['Date'] = pd.to_datetime(df['Date'])
+df = df.sort_values('Date')
+
+data = df['Price'].values.reshape(-1,1)
+
+#LSTM Preprocessing
+scaler = MinMaxScaler()
+data_scaled = scaler.fit_transform(data)
+
+def create_sequences(data, time_step=60):
+    X, y = [], []
+    for i in range(time_step, len(data)):
+        X.append(data[i-time_step:i, 0])
+        y.append(data[i, 0])
+    return np.array(X), np.array(y)
+
+time_step = 60
+X_lstm, y_lstm = create_sequences(data_scaled, time_step)
+
+X_lstm = X_lstm.reshape(X_lstm.shape[0], X_lstm.shape[1], 1)
+
+split = int(len(X_lstm) * 0.8)
+
+X_train_lstm = X_lstm[:split]
+X_test_lstm  = X_lstm[split:]
+
+y_train_lstm = y_lstm[:split]
+y_test_lstm  = y_lstm[split:]
+
+#Build LSTM Model
+model = Sequential()
+model.add(Input(shape=(time_step, 1)))
+model.add(LSTM(50, return_sequences=True))
+model.add(LSTM(50))
+model.add(Dense(1))
+
+model.compile(optimizer='adam', loss='mse')
+
+model.fit(X_train_lstm, y_train_lstm, epochs=20, batch_size=32, verbose=1)
+
+
+
+# LSTM Predictions (for hybrid & standalone plot)
+lstm_pred = model.predict(X_lstm)
+lstm_pred_inv = scaler.inverse_transform(lstm_pred).flatten()
+
+#Align dataframe with LSTM output
+df_lstm = df.iloc[time_step:].copy()
+
+# Create LSTM dataframe with Date
+lstm_df = pd.DataFrame({
+    'Date': df_lstm['Date'].values,
+    'LSTM_Pred': lstm_pred_inv
+})
+
+# Merge safely
+df_hybrid = df.merge(lstm_df, on='Date', how='inner')
+# Create RF Features
+df_hybrid['Lag1'] = df_hybrid['Price'].shift(1)
+df_hybrid['Price_Diff'] = df_hybrid['Price'] - df_hybrid['Lag1']
+
+df_hybrid = df_hybrid.dropna()
+
+X = df_hybrid[['Lag1', 'LSTM_Pred']]
+y = df_hybrid['Price_Diff']
+
+split = int(len(X) * 0.8)
+
+X_train_rf = X.iloc[:split]
+X_test_rf  = X.iloc[split:]
+
+y_train_rf = y.iloc[:split]
+y_test_rf  = y.iloc[split:]
+
+# Train Random Forest
+rf = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)
+rf.fit(X_train_rf, y_train_rf)
+
+# Hybrid Predictions
+pred_diff = rf.predict(X_test_rf)
+
+final_pred = X_test_rf['Lag1'] + pred_diff
+actual = df_hybrid['Price'].iloc[split:]
+
+#Evaluation
+rmse = np.sqrt(mean_squared_error(actual, final_pred))
+mae = mean_absolute_error(actual, final_pred)
+r2 = r2_score(actual, final_pred)
+
+#FORCE both to pure NumPy arrays (this is the key fix)
+actual_np = actual.to_numpy()
+pred_np = np.array(final_pred)
+
+# Default MAPE
+mape = np.mean(np.abs((actual_np - pred_np) / actual_np)) * 100
+
+# Manual MAPE
+errors = []
+for i in range(len(actual_np)):
+    if actual_np[i] != 0:
+        error = abs((actual_np[i] - pred_np[i]) / actual_np[i])
+        errors.append(error)
+
+mape_manual = (sum(errors) / len(errors)) * 100
+
+print("\n=== METRICS COMPARISON (HYBRID MODEL) ===")
+print(f"{'Metric':<10} | {'Manual (Numpy)':<18} | {'Default (Sklearn)':<18}")
+print("-"*55)
+print(f"{'MAE':<10} | {mae:<18.6f} | {mae:<18.6f}")
+print(f"{'RMSE':<10} | {rmse:<18.6f} | {rmse:<18.6f}")
+print(f"{'R2':<10} | {r2:<18.6f} | {r2:<18.6f}")
+print(f"{'MAPE (%)':<10} | {mape:<18.6f} | {mape:<18.6f}")
+
+#Hybrid Graph
+plt.figure(figsize=(12,6))
+plt.plot(df_hybrid['Date'].iloc[split:], actual, label='Actual')
+plt.plot(df_hybrid['Date'].iloc[split:], final_pred, label='Hybrid Prediction')
+plt.legend()
+plt.title("Hybrid Model (LSTM + RF)")
+plt.show()
