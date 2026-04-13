@@ -1,1 +1,49 @@
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
+# 1. Prepare Data
+df = pd.read_csv('Gold Price.csv')
+df['Date'] = pd.to_datetime(df['Date'])
+df = df.sort_values('Date')
+
+# 2. Differencing (The Key Step)
+df['Lag1'] = df['Price'].shift(1)
+df['Price_Diff'] = df['Price'] - df['Lag1']
+df = df.dropna()
+
+# 3. Split (80/20)
+split = int(len(df) * 0.8)
+X = df[['Lag1']] # Features
+y = df['Price_Diff'] # Target is the CHANGE
+
+X_train, X_test = X.iloc[:split], X.iloc[split:]
+y_train, y_test = y.iloc[:split], y.iloc[split:]
+
+# 4. Train Model
+rf = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)
+rf.fit(X_train, y_train)
+
+# 5. Predict Change and Reconstruct Price
+pred_diff = rf.predict(X_test)
+final_pred_price = X_test['Lag1'] + pred_diff
+actual_price = df['Price'].iloc[split:]
+
+# 6. Final Metrics
+print(f"MAE: {mean_absolute_error(actual_price, final_pred_price):.2f}")
+print(f"RMSE: {np.sqrt(mean_squared_error(actual_price, final_pred_price)):.2f}")
+print(f"R2 Score: {r2_score(actual_price, final_pred_price):.4f}")
+
+# Function to calculate MAPE
+def calculate_mape(actual, predicted):
+    return np.mean(np.abs((actual - predicted) / actual)) * 100
+
+# After getting your final predictions:
+final_pred_price = X_test['Lag1'] + pred_diff
+actual_price = df['Price'].iloc[split:]
+
+# Calculate MAPE
+mape_val = calculate_mape(actual_price, final_pred_price)
+
+print(f"MAPE: {mape_val:.4f}")
