@@ -188,3 +188,5 @@ results = pd.DataFrame({
 
 print(results)
 
+joblib.dump(best_gb, "models/gb_model.pkl")
+joblib.dump(best_xgb, "models/xgb_model.pkl")
