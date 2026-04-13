@@ -131,3 +131,6 @@ plt.plot(df_hybrid['Date'].iloc[split:], final_pred, label='Hybrid Prediction')
 plt.legend()
 plt.title("Hybrid Model (LSTM + RF)")
 plt.show()
+
+joblib.dump(rf, "models/hybrid_rf.pkl")
+model.save("models/hybrid_lstm.h5")
