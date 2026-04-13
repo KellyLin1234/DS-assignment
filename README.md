@@ -17,4 +17,4 @@ Gold Price.csv
 pip install -r requirements.txt
 
 2. Run code
-python main.py
+python app.py
