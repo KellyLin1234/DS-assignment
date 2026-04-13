@@ -47,3 +47,6 @@ actual_price = df['Price'].iloc[split:]
 mape_val = calculate_mape(actual_price, final_pred_price)
 
 print(f"MAPE: {mape_val:.4f}")
+
+import joblib
+joblib.dump(rf, "models/random_forest.pkl")
