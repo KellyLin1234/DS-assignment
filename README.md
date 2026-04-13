@@ -1,22 +1,20 @@
-# Gold Price Prediction Project
+# Gold Price Prediction (Hybrid Model)
 
-## Description
-This project uses machine learning models (Random Forest, LSTM, Hybrid) to predict gold prices in 10 years.
+## 📌 Project Description
+This project predicts gold prices using a Hybrid model (LSTM + Random Forest).
 
-## Models Used
+## 📊 Models Used
 - Random Forest
 - Gradient Boosting / XGBoost
 - LSTM
-- Hybrid (RF + LSTM)
+- Hybrid Model
 
-## Evaluation Metrics
-- RMSE
-- MAE
-- R2
-- MAPE
-
-## Dataset
+## 📁 Dataset
 Gold Price.csv
 
-## How to Run
-Run the Python file to see results.
+## ⚙️ How to Run
+1. Install requirements
+pip install -r requirements.txt
+
+2. Run code
+python main.py
