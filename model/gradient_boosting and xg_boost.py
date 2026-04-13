@@ -1,9 +1,7 @@
 !pip install pandas numpy scikit-learn xgboost
 import pandas as pd
 
-file_path = r"C:\Users\Kitty Lim\Downloads\Gold Price.csv"
-df = pd.read_csv(file_path)
-
+df = pd.read_csv('Gold Price.csv')
 df.head()
 import numpy as np
 
